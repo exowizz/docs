@@ -4,7 +4,7 @@
 
 # Documentation project instructions
 
-## About this project
+## About Exowizz project
 
 - This is a documentation site built on [Mintlify](https://mintlify.com)
 - Pages are MDX files with YAML frontmatter
