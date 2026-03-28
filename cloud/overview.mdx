@@ -1,0 +1,40 @@
+---
+title: "Overview"
+description: "Learn how Exo Cloud connects your Laravel app to Zapier, Make, and n8n."
+---
+
+Exo Cloud is a hosted service that bridges your Laravel app with automation platforms like Zapier, Make, and n8n. Instead of building custom integrations for each platform, you push your app's schema to Exo Cloud and your resources become available as triggers and actions in those platforms.
+
+## How it works
+
+1. **Define resources** in your Laravel app using Exo resource classes
+2. **Generate a schema** that describes your resources, their fields, and triggers
+3. **Upload the schema** to your Exo Cloud project
+4. **Users connect** to your app through Zapier, Make, or n8n using OAuth authentication
+
+Exo Cloud handles the platform-specific integration layers. Your app's Exo API endpoints serve the actual data.
+
+## What Exo Cloud provides
+
+- **Platform connectors** — Your app appears as an integration in Zapier, Make, and n8n
+- **OAuth authentication** — Users authorize access to your app through a standard OAuth flow
+- **Trigger mapping** — Your resource triggers (`on_create`, `on_update`, `on_delete`) become platform triggers
+- **Action mapping** — Your CRUD operations become platform actions (create a record, update a record, etc.)
+
+## Supported platforms
+
+| Platform | Status |
+| --- | --- |
+| Zapier | Supported (requires deploy key) |
+| Make | Supported |
+| n8n | Supported |
+
+## Getting started
+
+To connect your app to Exo Cloud, you need:
+
+1. An Exo Cloud account at [cloud.exowizz.com](https://cloud.exowizz.com)
+2. At least one resource defined in your app
+3. The Exo CLI commands (`exo:login`, `exo:schema`, `exo:upload`)
+
+See [Setup](/cloud/setup) for a step-by-step walkthrough.

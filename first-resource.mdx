@@ -1,0 +1,216 @@
+---
+title: "Your first resource"
+description: "Walk through creating an Exo resource from scratch, step by step."
+---
+
+This guide walks you through creating a resource class that exposes an `Order` model through the Exo API. By the end, you'll have a working API endpoint with create, read, update, and delete operations.
+
+## What is a resource?
+
+A resource is a PHP class that tells Exo:
+
+- **Which model** to expose (e.g. `Order`, `Contact`, `Invoice`)
+- **Which fields** to include in API responses
+- **Which events** to trigger webhooks for (create, update, delete)
+- **What validation rules** to apply when creating or updating records
+
+## Generate the resource
+
+Run the Artisan command to scaffold a new resource:
+
+```bash
+php artisan exo:resource OrderResource --model="App\Models\Order" --triggers=on_create,on_update,on_delete
+```
+
+This creates a file at `app/Exo/Resources/OrderResource.php` with all the methods you need to fill in.
+
+## Customize the resource
+
+Open the generated file. Here's what each section does and how to fill it in.
+
+### Choose which fields to expose
+
+The `transform` method controls what data appears in API responses and webhook payloads. Return only the fields you want to share:
+
+```php
+public function transform(Model $model): array
+{
+    return [
+        'id' => $model->id,
+        'order_number' => $model->order_number,
+        'status' => $model->status,
+        'total' => $model->total,
+        'customer_name' => $model->customer_name,
+        'created_at' => $model->created_at,
+        'updated_at' => $model->updated_at,
+    ];
+}
+```
+
+<Tip>
+  Only include fields that external tools need. Sensitive data like internal notes or cost margins should be left out.
+</Tip>
+
+### Set ownership
+
+If orders belong to a specific user, set the `ownerColumn` so each user only sees their own orders:
+
+```php
+public function ownerColumn(): ?string
+{
+    return 'user_id';
+}
+```
+
+If you return `null` (the default), only admins can access the resource.
+
+### Add validation rules
+
+Define what fields are required when creating an order through the API:
+
+```php
+public function createRules(Request $request): array
+{
+    return [
+        'order_number' => ['required', 'string', 'max:255'],
+        'status' => ['required', 'string', 'in:pending,processing,shipped,delivered'],
+        'total' => ['required', 'numeric', 'min:0'],
+        'customer_name' => ['required', 'string', 'max:255'],
+    ];
+}
+```
+
+For updates, you can make fields optional with `sometimes`:
+
+```php
+public function updateRules(Request $request, Model $model): array
+{
+    return [
+        'status' => ['sometimes', 'required', 'string', 'in:pending,processing,shipped,delivered'],
+        'total' => ['sometimes', 'required', 'numeric', 'min:0'],
+        'customer_name' => ['sometimes', 'required', 'string', 'max:255'],
+    ];
+}
+```
+
+### Make it searchable
+
+Add columns that should be searchable via the `?search=` query parameter:
+
+```php
+public function searchableColumns(): array
+{
+    return ['order_number', 'customer_name'];
+}
+```
+
+## The complete resource
+
+Here's the finished `OrderResource`:
+
+```php
+<?php
+
+namespace App\Exo\Resources;
+
+use Exowizz\Exo\Resource;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+
+class OrderResource extends Resource
+{
+    public function name(): string
+    {
+        return 'order';
+    }
+
+    public function model(): string
+    {
+        return 'App\Models\Order';
+    }
+
+    public function ownerColumn(): ?string
+    {
+        return 'user_id';
+    }
+
+    public function triggers(): array
+    {
+        return ['on_create', 'on_update', 'on_delete'];
+    }
+
+    public function transform(Model $model): array
+    {
+        return [
+            'id' => $model->id,
+            'order_number' => $model->order_number,
+            'status' => $model->status,
+            'total' => $model->total,
+            'customer_name' => $model->customer_name,
+            'created_at' => $model->created_at,
+            'updated_at' => $model->updated_at,
+        ];
+    }
+
+    public function searchableColumns(): array
+    {
+        return ['order_number', 'customer_name'];
+    }
+
+    public function createRules(Request $request): array
+    {
+        return [
+            'order_number' => ['required', 'string', 'max:255'],
+            'status' => ['required', 'string', 'in:pending,processing,shipped,delivered'],
+            'total' => ['required', 'numeric', 'min:0'],
+            'customer_name' => ['required', 'string', 'max:255'],
+        ];
+    }
+
+    public function updateRules(Request $request, Model $model): array
+    {
+        return [
+            'status' => ['sometimes', 'required', 'string', 'in:pending,processing,shipped,delivered'],
+            'total' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'customer_name' => ['sometimes', 'required', 'string', 'max:255'],
+        ];
+    }
+}
+```
+
+## Test it
+
+List all resources to confirm your order resource is registered:
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     http://your-app.test/exo-api/resources
+```
+
+Create an order:
+
+```bash
+curl -X POST \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"order_number":"ORD-001","status":"pending","total":49.99,"customer_name":"Jane Smith"}' \
+     http://your-app.test/exo-api/resources/order
+```
+
+Search for orders:
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     "http://your-app.test/exo-api/resources/order?search=Jane"
+```
+
+## Next steps
+
+<Columns cols={2}>
+  <Card title="Resource transforms" icon="wand-magic-sparkles" href="/resources/transforms">
+    Control exactly which fields appear in responses.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/webhooks/overview">
+    Get notified when orders are created or updated.
+  </Card>
+</Columns>

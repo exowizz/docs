@@ -1,0 +1,78 @@
+---
+title: "List subscriptions"
+api: "GET /exo-api/webhooks"
+description: "Returns all webhook subscriptions for the authenticated user."
+---
+
+Returns all webhook subscriptions belonging to the authenticated user, ordered by most recently created first.
+
+## Request
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-app.com/exo-api/webhooks
+```
+
+## Response
+
+<ResponseField name="data" type="array">
+  An array of webhook subscription objects.
+
+  <Expandable>
+    <ResponseField name="id" type="integer">
+      The subscription's ID.
+    </ResponseField>
+
+    <ResponseField name="user_id" type="integer">
+      The ID of the user who owns this subscription.
+    </ResponseField>
+
+    <ResponseField name="url" type="string">
+      The URL that receives webhook deliveries.
+    </ResponseField>
+
+    <ResponseField name="resource" type="string">
+      The resource name this subscription listens to.
+    </ResponseField>
+
+    <ResponseField name="events" type="array">
+      The trigger events this subscription listens for.
+    </ResponseField>
+
+    <ResponseField name="is_active" type="boolean">
+      Whether this subscription is currently active.
+    </ResponseField>
+
+    <ResponseField name="masked_secret" type="string">
+      A masked version of the webhook secret (e.g. `sec_****abcd`).
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      ISO-8601 timestamp.
+    </ResponseField>
+
+    <ResponseField name="updated_at" type="string">
+      ISO-8601 timestamp.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+**Example response:**
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "url": "https://example.com/webhook-receiver",
+      "resource": "order",
+      "events": ["on_create", "on_update"],
+      "is_active": true,
+      "masked_secret": "sec_****a1b2",
+      "created_at": "2026-03-28T14:30:00.000000Z",
+      "updated_at": "2026-03-28T14:30:00.000000Z"
+    }
+  ]
+}
+```

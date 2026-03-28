@@ -1,0 +1,67 @@
+---
+title: "List records"
+api: "GET /exo-api/resources/{name}"
+description: "Returns a paginated list of records for a specific resource."
+---
+
+Returns records for the given resource. Results are paginated and can be searched.
+
+Non-admin users only see records they own (based on the resource's `ownerColumn`). Admins see all records.
+
+## Path parameters
+
+<ParamField path="name" type="string" required>
+  The resource name (e.g. `contact`, `order`).
+</ParamField>
+
+## Query parameters
+
+<ParamField query="search" type="string">
+  Search term to filter results. Matches against the resource's searchable columns.
+</ParamField>
+
+<ParamField query="per_page" type="integer" default="15">
+  Number of records per page.
+</ParamField>
+
+<ParamField query="page" type="integer" default="1">
+  Page number.
+</ParamField>
+
+## Request
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     "https://your-app.com/exo-api/resources/contact?search=jane&per_page=10"
+```
+
+## Response
+
+Returns a standard Laravel paginated response. The `data` array contains the transformed records.
+
+**Example response:**
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "created_at": "2026-03-28T14:30:00+00:00"
+    }
+  ],
+  "current_page": 1,
+  "last_page": 1,
+  "per_page": 10,
+  "total": 1,
+  "next_page_url": null,
+  "prev_page_url": null
+}
+```
+
+## Errors
+
+| Status | Description |
+| --- | --- |
+| `404` | Resource name not found |

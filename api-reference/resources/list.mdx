@@ -1,0 +1,53 @@
+---
+title: "List resources"
+api: "GET /exo-api/resources"
+description: "Returns all registered Exo resources and their metadata."
+---
+
+Returns a list of all resources registered in your app, including their names, model classes, and supported triggers.
+
+## Request
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-app.com/exo-api/resources
+```
+
+## Response
+
+<ResponseField name="data" type="array">
+  An array of resource objects.
+
+  <Expandable>
+    <ResponseField name="name" type="string">
+      The resource identifier used in API URLs.
+    </ResponseField>
+
+    <ResponseField name="model" type="string">
+      The fully-qualified Eloquent model class.
+    </ResponseField>
+
+    <ResponseField name="triggers" type="array">
+      Supported trigger events: `on_create`, `on_update`, `on_delete`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+**Example response:**
+
+```json
+{
+  "data": [
+    {
+      "name": "contact",
+      "model": "App\\Models\\Contact",
+      "triggers": ["on_create", "on_update", "on_delete"]
+    },
+    {
+      "name": "order",
+      "model": "App\\Models\\Order",
+      "triggers": ["on_create", "on_update"]
+    }
+  ]
+}
+```

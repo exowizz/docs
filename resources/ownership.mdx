@@ -1,0 +1,127 @@
+---
+title: "Ownership & authorization"
+description: "Control who can access and modify each resource's records."
+---
+
+Exo uses ownership rules to make sure users can only access their own data. Admins can access everything.
+
+## How ownership works
+
+When a user makes an API request, Exo checks two things:
+
+1. **Is the user an admin?** — Admins can see and modify all records
+2. **Does the user own the record?** — Non-admin users can only access records they own
+
+This applies to listing records, viewing individual records, updating, and deleting.
+
+## Setting the owner column
+
+If your model has a `user_id` column (or similar) that links records to users, tell Exo about it:
+
+```php
+public function ownerColumn(): ?string
+{
+    return 'user_id';
+}
+```
+
+With this set:
+
+- When listing records, non-admin users only see rows where `user_id` matches their user ID
+- When viewing, updating, or deleting, Exo checks that `user_id` matches before allowing the action
+- When creating records, Exo automatically sets `user_id` to the authenticated user's ID
+
+## Admin-only resources
+
+If you return `null` from `ownerColumn` (the default), only admins can access the resource. Regular users will see an empty list and get `403 Unauthorized` errors for individual records.
+
+```php
+public function ownerColumn(): ?string
+{
+    return null; // only admins can access
+}
+```
+
+This is useful for resources like system settings or admin-managed data.
+
+## Relationship-based ownership
+
+Sometimes the owner isn't a direct column on the model. For example, a `Task` might belong to a `Project`, which belongs to a `User`. In this case, set `ownerIsRelationship` to `true`:
+
+```php
+public function ownerColumn(): ?string
+{
+    return 'user'; // name of the relationship method on the model
+}
+
+public function ownerIsRelationship(): bool
+{
+    return true;
+}
+```
+
+Exo will call `$model->user` to find the related user and compare their ID.
+
+## Configuring admins
+
+By default, no users are admins. Set the `is_admin` callback in `config/exo.php` to define who has admin access:
+
+```php
+'is_admin' => function ($user) {
+    return $user->is_admin === true;
+},
+```
+
+Or check for a role:
+
+```php
+'is_admin' => function ($user) {
+    return $user->hasRole('admin');
+},
+```
+
+Set it to `null` to disable admin checks — all users will be treated as non-admin and scoped by ownership rules.
+
+## How authorization works
+
+When a user tries to view, update, or delete a specific record, Exo calls the `authorize` method on your resource. The default logic is:
+
+1. If the user is an admin, allow the action
+2. If the resource has an `ownerColumn`, check if the user owns the record
+3. If neither condition is met, deny access (returns `403 Unauthorized`)
+
+You can override `authorize` for custom logic:
+
+```php
+public function authorize(Model $model): bool
+{
+    if ($this->isAdmin()) {
+        return true;
+    }
+
+    return $model->team_id === auth()->user()->team_id;
+}
+```
+
+## Read-only resources
+
+To prevent creation, updates, or deletion through the API, override the support methods:
+
+```php
+public function supportsCreate(): bool
+{
+    return false;
+}
+
+public function supportsUpdate(): bool
+{
+    return false;
+}
+
+public function supportsDelete(): bool
+{
+    return false;
+}
+```
+
+These can be mixed — for example, allow creation but prevent deletion.

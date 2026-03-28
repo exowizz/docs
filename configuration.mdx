@@ -1,0 +1,142 @@
+---
+title: "Configuration"
+description: "All configuration options available in config/exo.php."
+---
+
+After publishing the configuration file with `php artisan vendor:publish --tag=exo-config`, you can customize Exo's behavior in `config/exo.php`.
+
+## User model
+
+```php
+'user_model' => config('auth.providers.users.model'),
+```
+
+The Eloquent model class used for creating users with `exo:user`. Defaults to your app's configured auth user model.
+
+## Token name
+
+```php
+'token_name' => 'Exo API Token',
+```
+
+The name given to Personal Access Tokens created by the `exo:user` command.
+
+## Resource discovery
+
+```php
+'resources_path' => app_path('Exo/Resources'),
+'resources_namespace' => 'App\\Exo\\Resources\\',
+```
+
+Where Exo looks for resource classes. Any PHP class in this directory that extends `Exowizz\Exo\Resource` is automatically registered.
+
+## Route prefixes
+
+```php
+'web_route_prefix' => 'exo',
+'route_prefix' => 'exo-api',
+'oauth_route_prefix' => 'exo/oauth',
+```
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `web_route_prefix` | `exo` | Prefix for dashboard and login routes (e.g. `/exo/dashboard`) |
+| `route_prefix` | `exo-api` | Prefix for API routes (e.g. `/exo-api/resources`) |
+| `oauth_route_prefix` | `exo/oauth` | Prefix for OAuth routes (e.g. `/exo/oauth/authorize`) |
+
+## Login and dashboard paths
+
+```php
+'login_path' => 'exo/login',
+'dashboard_path' => 'exo/dashboard',
+```
+
+The URL paths for the Exo login page and dashboard. Unauthenticated requests to OAuth routes redirect to the login path.
+
+## Middleware
+
+```php
+'middleware' => ['auth:api'],
+'web_middleware' => ['exo.web.auth'],
+```
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `middleware` | `['auth:api']` | Middleware applied to all API routes |
+| `web_middleware` | `['exo.web.auth']` | Middleware applied to authenticated dashboard routes |
+
+## Admin access
+
+```php
+'is_admin' => null,
+```
+
+A callback that receives the authenticated user and returns `true` if they should have admin access. Admins can access all records regardless of ownership.
+
+```php
+'is_admin' => function ($user) {
+    return $user->is_admin === true;
+},
+```
+
+Set to `null` to disable admin access (all users are scoped by ownership rules).
+
+## Queue
+
+```php
+'queue' => env('EXO_QUEUE', 'default'),
+```
+
+The queue name for webhook delivery jobs. Override per resource with `Resource::webhookQueue()`.
+
+Set via the `EXO_QUEUE` environment variable:
+
+```env
+EXO_QUEUE=webhooks
+```
+
+## Exo Cloud
+
+```php
+'cloud_url' => env('EXO_CLOUD_URL', 'https://cloud.exowizz.com'),
+'cloud_client_id' => env('EXO_CLOUD_CLIENT_ID'),
+'cloud_pkce_client_id' => env('EXO_CLOUD_PKCE_CLIENT_ID'),
+'cloud_callback_ports' => [55000, 55001, 55002],
+```
+
+| Setting | Description |
+| --- | --- |
+| `cloud_url` | Base URL of the Exo Cloud server |
+| `cloud_client_id` | OAuth client ID for the device code flow |
+| `cloud_pkce_client_id` | OAuth client ID for the PKCE authorization code flow (falls back to `cloud_client_id`) |
+| `cloud_callback_ports` | Localhost ports the PKCE flow tries when listening for the OAuth callback |
+
+## Automation providers
+
+```php
+'providers' => [
+    'zapier' => [
+        'deploy_key' => env('ZAPIER_DEPLOY_KEY'),
+    ],
+    'make' => [],
+    'n8n' => [],
+],
+```
+
+Per-platform settings. Currently, Zapier requires a deploy key set via the `ZAPIER_DEPLOY_KEY` environment variable.
+
+## Publishable assets
+
+Exo provides three publishable asset groups:
+
+| Tag | What it publishes |
+| --- | --- |
+| `exo-config` | `config/exo.php` |
+| `exo-migrations` | Database migrations to your `database/migrations` directory |
+| `exo-views` | Blade views to `resources/views/vendor/exo` for customization |
+
+```bash
+php artisan vendor:publish --tag=exo-config
+php artisan vendor:publish --tag=exo-migrations
+php artisan vendor:publish --tag=exo-views
+```

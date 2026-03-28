@@ -1,0 +1,125 @@
+---
+title: "Verifying signatures"
+description: "Verify that webhook deliveries are authentic using HMAC signatures."
+---
+
+Every webhook delivery includes a cryptographic signature so you can verify the request came from your Exo app, not from a third party.
+
+## How signing works
+
+When Exo sends a webhook, it:
+
+1. Serializes the JSON payload
+2. Computes an HMAC-SHA256 hash using the subscription's secret as the key
+3. Sends the hash in the `X-Exo-Signature` header, prefixed with `sha256=`
+
+The request also includes a `User-Agent: Exo-Webhook/1.0` header.
+
+## Verifying in your receiver
+
+To verify a webhook delivery, compute the same HMAC hash on your end and compare it to the signature header.
+
+<Tabs>
+  <Tab title="PHP">
+
+```php
+$payload = file_get_contents('php://input');
+$signature = $_SERVER['HTTP_X_EXO_SIGNATURE'] ?? '';
+$secret = 'your-webhook-secret';
+
+$expected = 'sha256=' . bin2hex(
+    hash_hmac('sha256', $payload, $secret, binary: true)
+);
+
+if (! hash_equals($expected, $signature)) {
+    http_response_code(401);
+    exit('Invalid signature');
+}
+
+$data = json_decode($payload, true);
+// Process the webhook...
+```
+
+  </Tab>
+  <Tab title="Node.js">
+
+```javascript
+const crypto = require('crypto');
+
+app.post('/webhook-receiver', (req, res) => {
+  const payload = JSON.stringify(req.body);
+  const signature = req.headers['x-exo-signature'] || '';
+  const secret = 'your-webhook-secret';
+
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+
+  if (signature !== expected) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  // Process the webhook...
+  res.status(200).send('OK');
+});
+```
+
+  </Tab>
+  <Tab title="Python">
+
+```python
+import hmac
+import hashlib
+
+def verify_webhook(payload: bytes, signature: str, secret: str) -> bool:
+    expected = 'sha256=' + hmac.new(
+        secret.encode(),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(expected, signature)
+```
+
+  </Tab>
+</Tabs>
+
+## Important notes
+
+- Always use a **constant-time comparison** function (like `hash_equals` in PHP or `hmac.compare_digest` in Python) to prevent timing attacks.
+- The signature is computed on the **raw JSON body** of the request, not on any parsed or reformatted version. Make sure you read the raw body before parsing.
+- Each webhook subscription has its own unique secret, generated when the subscription is created. If you have multiple subscriptions, use the correct secret for each one.
+
+## Webhook request format
+
+Every webhook delivery is an HTTP POST with these headers:
+
+| Header | Value |
+| --- | --- |
+| `Content-Type` | `application/json` |
+| `X-Exo-Signature` | `sha256=` followed by the hex-encoded HMAC hash |
+| `User-Agent` | `Exo-Webhook/1.0` |
+
+The request body is a JSON object:
+
+```json
+{
+  "event": "on_create",
+  "resource": "order",
+  "data": {
+    "id": 42,
+    "order_number": "ORD-001",
+    "status": "pending"
+  },
+  "timestamp": "2026-03-28T14:30:00.123456Z"
+}
+```
+
+## Handling failures
+
+If your webhook receiver returns a non-2xx status code or the request times out (30 seconds), the delivery job throws an exception. Laravel's queue system handles retries based on your queue configuration.
+
+<Tip>
+  Configure your queue's `tries` and `backoff` settings to control how many times failed webhook deliveries are retried.
+</Tip>

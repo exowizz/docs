@@ -1,0 +1,38 @@
+---
+title: "Get current user"
+api: "GET /exo-api/whoami"
+description: "Returns the authenticated user's identity."
+---
+
+Returns the `id`, `name`, and `email` of the user associated with the Bearer token. Use this to verify your token is working.
+
+## Request
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-app.com/exo-api/whoami
+```
+
+## Response
+
+<ResponseField name="id" type="integer">
+  The user's ID.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The user's name.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  The user's email address.
+</ResponseField>
+
+**Example response:**
+
+```json
+{
+  "id": 1,
+  "name": "Jane Smith",
+  "email": "jane@example.com"
+}
+```

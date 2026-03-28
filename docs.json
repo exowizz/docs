@@ -18,31 +18,39 @@
             "pages": [
               "index",
               "quickstart",
-              "development"
+              "first-resource"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Resources",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "resources/overview",
+              "resources/transforms",
+              "resources/ownership",
+              "resources/search",
+              "resources/crud"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Webhooks",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "webhooks/overview",
+              "webhooks/subscriptions",
+              "webhooks/security"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Exo Cloud",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "cloud/overview",
+              "cloud/setup"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "configuration",
+              "commands"
             ]
           }
         ]
@@ -51,18 +59,32 @@
         "tab": "API reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Overview",
             "pages": [
               "api-reference/introduction"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Resources",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/resources/whoami",
+              "api-reference/resources/list",
+              "api-reference/resources/show",
+              "api-reference/resources/show-instance",
+              "api-reference/resources/create",
+              "api-reference/resources/update",
+              "api-reference/resources/delete"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks/list",
+              "api-reference/webhooks/create",
+              "api-reference/webhooks/show",
+              "api-reference/webhooks/update",
+              "api-reference/webhooks/delete",
+              "api-reference/webhooks/payload"
             ]
           }
         ]

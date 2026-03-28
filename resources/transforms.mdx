@@ -1,0 +1,98 @@
+---
+title: "Transforms"
+description: "Control which fields appear in API responses and webhook payloads."
+---
+
+The `transform` method defines what data your resource returns. Every time Exo sends an API response or delivers a webhook, it calls `transform` to build the payload.
+
+## Basic transform
+
+Return an array of the fields you want to expose:
+
+```php
+public function transform(Model $model): array
+{
+    return [
+        'id' => $model->id,
+        'name' => $model->name,
+        'email' => $model->email,
+        'created_at' => $model->created_at,
+    ];
+}
+```
+
+This is the array that API consumers and webhook subscribers receive.
+
+## Choosing which fields to include
+
+You control exactly what gets exposed. A common pattern is to exclude sensitive or internal fields:
+
+```php
+public function transform(Model $model): array
+{
+    return [
+        'id' => $model->id,
+        'order_number' => $model->order_number,
+        'status' => $model->status,
+        'total' => $model->total,
+        'customer_name' => $model->customer_name,
+        'created_at' => $model->created_at,
+    ];
+}
+```
+
+<Tip>
+  Only include fields that external tools and automations need. Leave out internal data like cost margins, admin notes, or soft-delete timestamps.
+</Tip>
+
+## Including related data
+
+You can include data from related models:
+
+```php
+public function transform(Model $model): array
+{
+    return [
+        'id' => $model->id,
+        'name' => $model->name,
+        'email' => $model->email,
+        'company_name' => $model->company?->name,
+        'tags' => $model->tags->pluck('name')->toArray(),
+    ];
+}
+```
+
+<Warning>
+  When including relationships, make sure to eager-load them in `baseQuery()` to avoid performance issues. See the [search & queries](/resources/search) page.
+</Warning>
+
+## Date formatting
+
+Exo automatically formats date fields as ISO-8601 strings (e.g. `2026-03-28T14:30:00+00:00`). This applies to any attribute listed in the model's `$dates` array or cast as a date.
+
+You don't need to format dates yourself — if you include a date field in your `transform` output and the model recognizes it as a date, Exo handles the formatting through the `resolve` method.
+
+```php
+public function transform(Model $model): array
+{
+    return [
+        'id' => $model->id,
+        'name' => $model->name,
+        'created_at' => $model->created_at,  // automatically formatted as ISO-8601
+        'updated_at' => $model->updated_at,  // automatically formatted as ISO-8601
+    ];
+}
+```
+
+## Using `toArray` for quick setup
+
+For a quick start, you can return the entire model:
+
+```php
+public function transform(Model $model): array
+{
+    return $model->toArray();
+}
+```
+
+This works but exposes all visible attributes. It's better to explicitly list fields so you control what external tools see — especially if you add new columns to the model later.

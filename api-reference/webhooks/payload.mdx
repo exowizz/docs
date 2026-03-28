@@ -1,0 +1,71 @@
+---
+title: "Webhook payload"
+description: "Format of webhook delivery requests sent by Exo."
+---
+
+When a trigger fires and a matching subscription exists, Exo sends an HTTP POST request to the subscription's URL. This page describes the request format.
+
+## Request headers
+
+| Header | Value |
+| --- | --- |
+| `Content-Type` | `application/json` |
+| `X-Exo-Signature` | HMAC-SHA256 signature: `sha256=` followed by the hex-encoded hash |
+| `User-Agent` | `Exo-Webhook/1.0` |
+
+## Request body
+
+<ResponseField name="event" type="string">
+  The trigger that fired: `on_create`, `on_update`, or `on_delete`.
+</ResponseField>
+
+<ResponseField name="resource" type="string">
+  The resource name (e.g. `order`, `contact`).
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  The transformed record data, as returned by the resource's `transform` method. Date fields are formatted as ISO-8601 strings.
+</ResponseField>
+
+<ResponseField name="timestamp" type="string">
+  UTC timestamp of when the event was processed, in microsecond precision: `2026-03-28T14:30:00.123456Z`.
+</ResponseField>
+
+## Example payload
+
+```json
+{
+  "event": "on_create",
+  "resource": "order",
+  "data": {
+    "id": 42,
+    "order_number": "ORD-001",
+    "status": "pending",
+    "total": 49.99,
+    "customer_name": "Jane Smith",
+    "created_at": "2026-03-28T14:30:00+00:00",
+    "updated_at": "2026-03-28T14:30:00+00:00"
+  },
+  "timestamp": "2026-03-28T14:30:00.123456Z"
+}
+```
+
+## Signature verification
+
+The `X-Exo-Signature` header contains an HMAC-SHA256 hash of the raw JSON body, computed using the subscription's secret as the key.
+
+To verify:
+
+1. Read the raw request body (before parsing)
+2. Compute `sha256=` + hex-encoded HMAC-SHA256 of the body using your subscription's secret
+3. Compare with the `X-Exo-Signature` header using a constant-time comparison
+
+See [Verifying signatures](/webhooks/security) for code examples in PHP, Node.js, and Python.
+
+## Delivery behavior
+
+- Webhooks are delivered via Laravel's queue system as background jobs
+- Each delivery has a 30-second timeout
+- If your endpoint returns a non-2xx status or times out, the job throws an exception and Laravel's queue retries it based on your queue configuration
+- Admins receive webhooks for all records; regular users only receive webhooks for records they own
+- Inactive subscriptions (`is_active = false`) are skipped during delivery

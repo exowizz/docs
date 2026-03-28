@@ -1,0 +1,44 @@
+---
+title: "Get a subscription"
+api: "GET /exo-api/webhooks/{id}"
+description: "Returns a single webhook subscription."
+---
+
+Returns details for a specific webhook subscription owned by the authenticated user.
+
+## Path parameters
+
+<ParamField path="id" type="integer" required>
+  The webhook subscription ID.
+</ParamField>
+
+## Request
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-app.com/exo-api/webhooks/1
+```
+
+## Response
+
+**Example response:**
+
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "url": "https://example.com/webhook-receiver",
+  "resource": "order",
+  "events": ["on_create", "on_update"],
+  "is_active": true,
+  "masked_secret": "sec_****a1b2",
+  "created_at": "2026-03-28T14:30:00.000000Z",
+  "updated_at": "2026-03-28T14:30:00.000000Z"
+}
+```
+
+## Errors
+
+| Status | Description |
+| --- | --- |
+| `404` | Subscription not found or does not belong to the authenticated user |

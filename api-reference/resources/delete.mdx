@@ -1,0 +1,37 @@
+---
+title: "Delete a record"
+api: "DELETE /exo-api/resources/{name}/{id}"
+description: "Deletes a record."
+---
+
+Deletes a record. The user must be authorized (admin or owner).
+
+## Path parameters
+
+<ParamField path="name" type="string" required>
+  The resource name (e.g. `contact`, `order`).
+</ParamField>
+
+<ParamField path="id" type="integer" required>
+  The record's ID.
+</ParamField>
+
+## Request
+
+```bash
+curl -X DELETE \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-app.com/exo-api/resources/contact/1
+```
+
+## Response
+
+Returns `204 No Content` with an empty body on success.
+
+## Errors
+
+| Status | Description |
+| --- | --- |
+| `403` | User is not authorized to delete this record |
+| `404` | Resource or record not found |
+| `405` | Resource does not support deletion (`supportsDelete` returns `false`) |

@@ -1,0 +1,112 @@
+---
+title: "Setup"
+description: "Authenticate with Exo Cloud, generate your schema, and upload it."
+---
+
+This guide walks you through connecting your Laravel app to Exo Cloud so your resources become available in Zapier, Make, and n8n.
+
+## Prerequisites
+
+- At least one [Exo resource](/resources/overview) defined in your app
+- An Exo Cloud account at [cloud.exowizz.com](https://cloud.exowizz.com)
+- A project created in the Exo Cloud dashboard
+
+<Steps>
+
+<Step title="Log in to Exo Cloud">
+
+Authenticate your local development environment with Exo Cloud:
+
+```bash
+php artisan exo:login
+```
+
+This opens your browser for OAuth authentication. After you authorize, your credentials are stored locally in an encrypted file at `storage/app/.exo-credentials`.
+
+<Note>
+  The login uses a PKCE authorization code flow. If your browser doesn't open automatically, follow the URL printed in the terminal.
+</Note>
+
+</Step>
+
+<Step title="Verify your login">
+
+Confirm you're authenticated:
+
+```bash
+php artisan exo:whoami
+```
+
+This shows the name and email associated with your Exo Cloud account.
+
+</Step>
+
+<Step title="Generate the schema">
+
+Create a JSON schema file that describes your resources:
+
+```bash
+php artisan exo:schema
+```
+
+This generates an `exo-schema.json` file in your project root. The schema includes:
+
+- All registered resources and their names
+- Trigger events for each resource
+- Field names and types (inferred from your `createRules`)
+
+</Step>
+
+<Step title="Upload to Exo Cloud">
+
+Push the schema to your Exo Cloud project:
+
+```bash
+php artisan exo:upload
+```
+
+The command lists your available Exo Cloud projects and asks you to select one. After uploading, your resources are synced with the connected platforms.
+
+</Step>
+
+</Steps>
+
+## Zapier deploy key
+
+If you're deploying to Zapier, you need a deploy key. Set it in your `.env` file:
+
+```env
+ZAPIER_DEPLOY_KEY=your-zapier-deploy-key
+```
+
+Or in `config/exo.php`:
+
+```php
+'providers' => [
+    'zapier' => [
+        'deploy_key' => env('ZAPIER_DEPLOY_KEY'),
+    ],
+],
+```
+
+The deploy key is sent along with the schema upload when deploying to Zapier.
+
+## Logging out
+
+To remove your stored credentials:
+
+```bash
+php artisan exo:logout
+```
+
+This deletes the encrypted credentials file.
+
+## Re-uploading after changes
+
+Whenever you add, remove, or modify resources, regenerate and re-upload the schema:
+
+```bash
+php artisan exo:schema && php artisan exo:upload
+```
+
+This keeps the automation platforms in sync with your app's current resource definitions.

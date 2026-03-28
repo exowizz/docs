@@ -1,33 +1,111 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "Introduction"
+description: "Authentication, base URL, and response format for the Exo API."
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+The Exo API provides REST endpoints for interacting with your resources and managing webhook subscriptions. All endpoints are JSON-based and require authentication.
 
-## Welcome
+## Base URL
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+All API endpoints are prefixed with `/exo-api` (configurable via `config('exo.route_prefix')`):
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+```
+https://your-app.com/exo-api
+```
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+Every request must include a Bearer token in the `Authorization` header:
+
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-app.com/exo-api/whoami
+```
+
+Tokens are Laravel Passport Personal Access Tokens. Create one using the `exo:user` command:
+
+```bash
+php artisan exo:user
+```
+
+Or create tokens programmatically through Passport.
+
+## Response format
+
+Successful responses return JSON. Single records are returned directly, lists are paginated:
+
+**Single record:**
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+{
+  "id": 1,
+  "name": "Jane Smith",
+  "email": "jane@example.com",
+  "created_at": "2026-03-28T14:30:00+00:00"
+}
 ```
+
+**Paginated list:**
+
+```json
+{
+  "data": [
+    { "id": 1, "name": "Jane Smith" },
+    { "id": 2, "name": "John Doe" }
+  ],
+  "current_page": 1,
+  "last_page": 5,
+  "per_page": 15,
+  "total": 72,
+  "next_page_url": "https://your-app.com/exo-api/resources/contact?page=2",
+  "prev_page_url": null
+}
+```
+
+## Error responses
+
+Errors return a JSON object with a `message` field:
+
+| Status code | Meaning |
+| --- | --- |
+| `401` | Missing or invalid token |
+| `403` | Authenticated but not authorized to access this record |
+| `404` | Resource or record not found |
+| `405` | Operation not supported (e.g. creation disabled on this resource) |
+| `422` | Validation errors |
+
+**Validation error example:**
+
+```json
+{
+  "message": "The name field is required.",
+  "errors": {
+    "name": ["The name field is required."],
+    "email": ["The email field must be a valid email address."]
+  }
+}
+```
+
+## Endpoints overview
+
+### Resources
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/exo-api/whoami` | Get the authenticated user's identity |
+| `GET` | `/exo-api/resources` | List all registered resources |
+| `GET` | `/exo-api/resources/{name}` | List records for a resource (paginated) |
+| `GET` | `/exo-api/resources/{name}/{id}` | Get a single record |
+| `POST` | `/exo-api/resources/{name}` | Create a new record |
+| `PUT` | `/exo-api/resources/{name}/{id}` | Update a record |
+| `DELETE` | `/exo-api/resources/{name}/{id}` | Delete a record |
+
+### Webhooks
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/exo-api/webhooks` | List your webhook subscriptions |
+| `POST` | `/exo-api/webhooks` | Create a webhook subscription |
+| `GET` | `/exo-api/webhooks/{id}` | Get a webhook subscription |
+| `PUT` | `/exo-api/webhooks/{id}` | Update a webhook subscription |
+| `DELETE` | `/exo-api/webhooks/{id}` | Delete a webhook subscription |

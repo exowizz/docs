@@ -1,0 +1,35 @@
+---
+title: "Delete a subscription"
+api: "DELETE /exo-api/webhooks/{id}"
+description: "Deletes a webhook subscription."
+---
+
+Permanently deletes a webhook subscription. No further events will be delivered to the subscription's URL.
+
+## Path parameters
+
+<ParamField path="id" type="integer" required>
+  The webhook subscription ID.
+</ParamField>
+
+## Request
+
+```bash
+curl -X DELETE \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     https://your-app.com/exo-api/webhooks/1
+```
+
+## Response
+
+Returns `204 No Content` with an empty body on success.
+
+## Errors
+
+| Status | Description |
+| --- | --- |
+| `404` | Subscription not found or does not belong to the authenticated user |
+
+<Tip>
+  If you want to temporarily stop receiving webhooks without losing your subscription, toggle `is_active` through the [dashboard](/webhooks/subscriptions#activating-and-deactivating) instead of deleting.
+</Tip>

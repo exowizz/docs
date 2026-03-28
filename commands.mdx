@@ -1,0 +1,119 @@
+---
+title: "CLI commands"
+description: "All Artisan commands provided by the Exo package."
+---
+
+Exo registers seven Artisan commands for managing resources, users, and Exo Cloud connectivity.
+
+## exo:resource
+
+Scaffold a new resource class.
+
+```bash
+php artisan exo:resource [name] [--model=] [--triggers=]
+```
+
+| Argument/Option | Description |
+| --- | --- |
+| `name` | The class name (e.g. `OrderResource`). Prompted if omitted. |
+| `--model` | The fully-qualified Eloquent model class (e.g. `App\Models\Order`) |
+| `--triggers` | Comma-separated triggers: `on_create,on_update,on_delete` |
+
+**Examples:**
+
+```bash
+# Interactive mode
+php artisan exo:resource
+
+# Fully specified
+php artisan exo:resource OrderResource --model="App\Models\Order" --triggers=on_create,on_update,on_delete
+```
+
+The file is created at the path defined by `config('exo.resources_path')` (default: `app/Exo/Resources/`).
+
+## exo:user
+
+Create a new user with an optional Personal Access Token.
+
+```bash
+php artisan exo:user [--name=] [--email=] [--password=] [--no-token]
+```
+
+| Option | Description |
+| --- | --- |
+| `--name` | User name (skips interactive prompt) |
+| `--email` | User email (skips interactive prompt) |
+| `--password` | User password (skips interactive prompt) |
+| `--no-token` | Skip creating a Personal Access Token |
+
+**Examples:**
+
+```bash
+# Interactive mode
+php artisan exo:user
+
+# Non-interactive
+php artisan exo:user --name="Jane Smith" --email="jane@example.com" --password="secure-password"
+```
+
+<Warning>
+  The Personal Access Token is only displayed once. Copy and store it securely.
+</Warning>
+
+<Note>
+  Your User model must use the `Laravel\Passport\HasApiTokens` trait for token creation to work. If you haven't set up personal access tokens, run `php artisan passport:install --personal` first.
+</Note>
+
+## exo:login
+
+Authenticate with Exo Cloud using OAuth.
+
+```bash
+php artisan exo:login
+```
+
+Opens your browser for PKCE authorization. After authorizing, credentials are stored encrypted at `storage/app/.exo-credentials`. If PKCE isn't available, falls back to device code flow.
+
+## exo:logout
+
+Remove stored Exo Cloud credentials.
+
+```bash
+php artisan exo:logout
+```
+
+Deletes the encrypted credentials file.
+
+## exo:whoami
+
+Check your current Exo Cloud identity.
+
+```bash
+php artisan exo:whoami
+```
+
+Displays the name and email associated with your stored Exo Cloud credentials.
+
+## exo:schema
+
+Generate a JSON schema describing your resources.
+
+```bash
+php artisan exo:schema
+```
+
+Creates an `exo-schema.json` file in your project root. The schema includes resource names, triggers, and field definitions inferred from your `createRules`.
+
+## exo:upload
+
+Upload the generated schema to Exo Cloud.
+
+```bash
+php artisan exo:upload
+```
+
+Lists your Exo Cloud projects and uploads the schema to the one you select. If a `ZAPIER_DEPLOY_KEY` is configured, it's included for Zapier deployments.
+
+<Note>
+  You must run `exo:login` before using `exo:upload`, and `exo:schema` to generate the schema file.
+</Note>

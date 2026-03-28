@@ -1,0 +1,55 @@
+---
+title: "Create a record"
+api: "POST /exo-api/resources/{name}"
+description: "Creates a new record for the specified resource."
+---
+
+Creates a new record. The request body is validated against the resource's `createRules`. If the resource has an `ownerColumn`, it's automatically set to the authenticated user's ID.
+
+## Path parameters
+
+<ParamField path="name" type="string" required>
+  The resource name (e.g. `contact`, `order`).
+</ParamField>
+
+## Request body
+
+The fields to create the record with. The exact fields depend on the resource's `createRules` method.
+
+## Request
+
+```bash
+curl -X POST \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "Jane Smith",
+       "email": "jane@example.com",
+       "phone": "+1-555-0123"
+     }' \
+     https://your-app.com/exo-api/resources/contact
+```
+
+## Response
+
+Returns the created record's transformed data with a `201 Created` status.
+
+**Example response:**
+
+```json
+{
+  "id": 5,
+  "name": "Jane Smith",
+  "email": "jane@example.com",
+  "phone": "+1-555-0123",
+  "created_at": "2026-03-28T14:30:00+00:00"
+}
+```
+
+## Errors
+
+| Status | Description |
+| --- | --- |
+| `404` | Resource name not found |
+| `405` | Resource does not support creation (`supportsCreate` returns `false`) |
+| `422` | Validation failed — see `errors` object for details |

@@ -1,0 +1,180 @@
+---
+title: "CRUD operations"
+description: "Define validation rules and customize how records are created, updated, and deleted."
+---
+
+Exo resources support creating, updating, and deleting records through the API. You control the behavior by defining validation rules and overriding the perform methods.
+
+## Creating records
+
+### Validation rules
+
+Define the rules for creating a record in the `createRules` method:
+
+```php
+public function createRules(Request $request): array
+{
+    return [
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'string', 'email', 'max:255', Rule::unique(Contact::class)],
+        'phone' => ['nullable', 'string', 'max:50'],
+    ];
+}
+```
+
+These are standard Laravel validation rules. When a `POST` request comes in, Exo validates the request body against these rules before creating the record.
+
+### Custom create logic
+
+By default, Exo calls `Model::create()` with the validated data. If your resource has an `ownerColumn`, Exo automatically sets it to the authenticated user's ID.
+
+Override `performCreate` when you need custom logic — for example, hashing a password or creating related records:
+
+```php
+use Illuminate\Support\Facades\Hash;
+
+public function performCreate(array $validated): Model
+{
+    $validated['password'] = Hash::make($validated['password']);
+
+    return User::create($validated);
+}
+```
+
+## Updating records
+
+### Validation rules
+
+Define update rules in `updateRules`. Use `sometimes` to make fields optional (so users can update a single field without sending everything):
+
+```php
+public function updateRules(Request $request, Model $model): array
+{
+    return [
+        'name' => ['sometimes', 'required', 'string', 'max:255'],
+        'email' => ['sometimes', 'required', 'string', 'email', Rule::unique(Contact::class)->ignore($model)],
+        'phone' => ['nullable', 'string', 'max:50'],
+    ];
+}
+```
+
+<Tip>
+  The `$model` parameter lets you reference the current record — useful for unique rules that need to ignore the current row.
+</Tip>
+
+### Custom update logic
+
+Override `performUpdate` for custom behavior:
+
+```php
+public function performUpdate(Model $model, array $validated): Model
+{
+    if (isset($validated['password'])) {
+        $validated['password'] = Hash::make($validated['password']);
+    }
+
+    $model->update($validated);
+
+    return $model;
+}
+```
+
+## Deleting records
+
+Deletion doesn't need validation rules — Exo checks authorization and then calls `$model->delete()`. If the user is authorized (admin or owner), the record is deleted and a `204 No Content` response is returned.
+
+## Disabling operations
+
+You can disable any operation by returning `false` from the corresponding support method:
+
+```php
+public function supportsCreate(): bool
+{
+    return true;
+}
+
+public function supportsUpdate(): bool
+{
+    return true;
+}
+
+public function supportsDelete(): bool
+{
+    return false; // records cannot be deleted through the API
+}
+```
+
+When a disabled operation is attempted, the API returns `405 Method Not Allowed`.
+
+## Complete example
+
+Here's a resource with full CRUD support:
+
+```php
+<?php
+
+namespace App\Exo\Resources;
+
+use App\Models\Contact;
+use Exowizz\Exo\Resource;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class ContactResource extends Resource
+{
+    public function name(): string
+    {
+        return 'contact';
+    }
+
+    public function model(): string
+    {
+        return 'App\Models\Contact';
+    }
+
+    public function ownerColumn(): ?string
+    {
+        return 'user_id';
+    }
+
+    public function triggers(): array
+    {
+        return ['on_create', 'on_update', 'on_delete'];
+    }
+
+    public function transform(Model $model): array
+    {
+        return [
+            'id' => $model->id,
+            'name' => $model->name,
+            'email' => $model->email,
+            'phone' => $model->phone,
+            'created_at' => $model->created_at,
+        ];
+    }
+
+    public function createRules(Request $request): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', Rule::unique(Contact::class)],
+            'phone' => ['nullable', 'string', 'max:50'],
+        ];
+    }
+
+    public function updateRules(Request $request, Model $model): array
+    {
+        return [
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'string', 'email', Rule::unique(Contact::class)->ignore($model)],
+            'phone' => ['nullable', 'string', 'max:50'],
+        ];
+    }
+
+    public function supportsDelete(): bool
+    {
+        return false;
+    }
+}
+```

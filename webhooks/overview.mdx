@@ -1,0 +1,102 @@
+---
+title: "Overview"
+description: "Learn how Exo webhooks notify external services when your data changes."
+---
+
+Webhooks let you send real-time notifications to external URLs whenever something happens in your app. When a record is created, updated, or deleted, Exo sends an HTTP request to any subscribed webhook URLs with the details of what changed.
+
+## What are webhooks?
+
+Think of webhooks as "reverse API calls." Instead of an external service asking your app for updates, your app tells the external service when something happens.
+
+For example, when a new order is created in your app, Exo can automatically notify:
+
+- A Zapier workflow that sends a Slack message
+- A Make scenario that updates a spreadsheet
+- An n8n workflow that creates an invoice
+
+## Triggers
+
+Each resource defines which events it responds to. There are three trigger types:
+
+| Trigger | When it fires |
+| --- | --- |
+| `on_create` | A new record is created |
+| `on_update` | An existing record is updated |
+| `on_delete` | A record is deleted |
+
+You define triggers in your resource class:
+
+```php
+public function triggers(): array
+{
+    return ['on_create', 'on_update', 'on_delete'];
+}
+```
+
+You can include any combination. For example, if you only want to notify when records are created:
+
+```php
+public function triggers(): array
+{
+    return ['on_create'];
+}
+```
+
+## How webhook delivery works
+
+When a trigger fires, here's what happens:
+
+1. Exo detects the model event (created, updated, or deleted)
+2. It finds all webhook subscriptions that match the resource and event
+3. For each matching subscription, Exo dispatches a background job
+4. The job sends an HTTP POST to the subscriber's URL with the event data
+5. The payload includes an HMAC signature so the receiver can verify it's authentic
+
+<Note>
+  Webhooks are delivered via Laravel's queue system. Make sure you have a queue worker running (`php artisan queue:work`) for webhooks to be sent.
+</Note>
+
+## Webhook payload
+
+Every webhook delivery sends a JSON payload like this:
+
+```json
+{
+  "event": "on_create",
+  "resource": "order",
+  "data": {
+    "id": 42,
+    "order_number": "ORD-001",
+    "status": "pending",
+    "total": 49.99,
+    "customer_name": "Jane Smith",
+    "created_at": "2026-03-28T14:30:00+00:00"
+  },
+  "timestamp": "2026-03-28T14:30:00.123456Z"
+}
+```
+
+The `data` field contains the output of your resource's `transform` method. The `event` and `resource` fields tell the receiver what happened and to which resource.
+
+## Ownership and webhooks
+
+Webhook subscriptions respect the same ownership rules as the API:
+
+- **Admins** receive webhooks for all records, regardless of owner
+- **Regular users** only receive webhooks for records they own (based on the resource's `ownerColumn`)
+
+This means if User A subscribes to `on_create` for orders, they only receive webhooks for orders where `user_id` matches their ID.
+
+## Custom webhook queue
+
+By default, webhook delivery jobs run on the queue defined in `config('exo.queue')`. You can override this per resource:
+
+```php
+public function webhookQueue(): ?string
+{
+    return 'webhooks';
+}
+```
+
+Return `null` to use the default queue.

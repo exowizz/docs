@@ -1,0 +1,106 @@
+---
+title: "Overview"
+description: "Understand how Exo resources work and what methods are available."
+---
+
+A resource is the core building block of Exo. Each resource class connects one Eloquent model to the Exo API, controlling what data is exposed, how it's validated, and which events trigger webhooks.
+
+## How resources work
+
+When your Laravel app boots, Exo scans the `app/Exo/Resources` directory and registers every resource class it finds. For each resource, Exo:
+
+1. Creates API endpoints under `/exo-api/resources/{name}` for listing, creating, updating, and deleting records
+2. Attaches model observers that fire webhook events on create, update, and delete
+3. Makes the resource available for webhook subscriptions
+
+## Required methods
+
+Every resource must extend `Exowizz\Exo\Resource` and implement four methods:
+
+```php
+use Exowizz\Exo\Resource;
+use Illuminate\Database\Eloquent\Model;
+
+class ContactResource extends Resource
+{
+    public function name(): string
+    {
+        return 'contact';
+    }
+
+    public function model(): string
+    {
+        return 'App\Models\Contact';
+    }
+
+    public function triggers(): array
+    {
+        return ['on_create', 'on_update', 'on_delete'];
+    }
+
+    public function transform(Model $model): array
+    {
+        return [
+            'id' => $model->id,
+            'name' => $model->name,
+            'email' => $model->email,
+        ];
+    }
+}
+```
+
+| Method | What it does |
+| --- | --- |
+| `name()` | A unique identifier used in API URLs, e.g. `/exo-api/resources/contact` |
+| `model()` | The fully-qualified Eloquent model class to expose |
+| `triggers()` | Which events fire webhooks: `on_create`, `on_update`, `on_delete` |
+| `transform()` | Converts a model instance into the array returned by the API |
+
+## Optional methods
+
+Beyond the four required methods, resources have many optional methods you can override:
+
+| Method | Purpose | Default |
+| --- | --- | --- |
+| `ownerColumn()` | Scope records to a user | `null` (admin-only) |
+| `ownerIsRelationship()` | Whether the owner column is a relationship | `false` |
+| `searchableColumns()` | Columns searchable via `?search=` | `[]` (disabled) |
+| `applySearch()` | Custom search query logic | OR LIKE on `searchableColumns` |
+| `baseQuery()` | Starting query (add scopes, eager loads) | `Model::query()` |
+| `createRules()` | Validation rules for creating records | `[]` |
+| `updateRules()` | Validation rules for updating records | `[]` |
+| `performCreate()` | Custom create logic | `Model::create()` |
+| `performUpdate()` | Custom update logic | `$model->update()` |
+| `supportsCreate()` | Whether creation is allowed | `true` |
+| `supportsUpdate()` | Whether updates are allowed | `true` |
+| `supportsDelete()` | Whether deletion is allowed | `true` |
+| `webhookQueue()` | Queue name for this resource's webhooks | `config('exo.queue')` |
+| `isAdmin()` | Whether the current user is an admin | Uses `config('exo.is_admin')` |
+
+Each of these is covered in detail in the following pages.
+
+## Creating resources
+
+The fastest way to create a resource is with the Artisan command:
+
+```bash
+php artisan exo:resource ContactResource --model="App\Models\Contact" --triggers=on_create,on_update,on_delete
+```
+
+This generates a file at `app/Exo/Resources/ContactResource.php` with all methods stubbed out.
+
+You can also run the command without arguments for an interactive experience:
+
+```bash
+php artisan exo:resource
+```
+
+<Note>
+  Exo auto-discovers resources in the `app/Exo/Resources` directory. You can change this location in the [configuration](/configuration).
+</Note>
+
+## Resource discovery
+
+Exo looks for resource classes in the path defined by `config('exo.resources_path')` (default: `app/Exo/Resources`). Any PHP class in that directory that extends `Exowizz\Exo\Resource` is automatically registered when your app boots.
+
+The namespace for discovery is set by `config('exo.resources_namespace')` (default: `App\Exo\Resources`). If you move your resources to a different directory, update both config values to match.

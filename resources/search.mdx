@@ -1,0 +1,79 @@
+---
+title: "Search & queries"
+description: "Add search to your resources and customize the underlying queries."
+---
+
+Exo resources support searching via the `?search=` query parameter on the list endpoint. You can also customize the base query to add eager loading, default ordering, or scopes.
+
+## Adding search
+
+The quickest way to enable search is to list the columns you want to be searchable:
+
+```php
+public function searchableColumns(): array
+{
+    return ['name', 'email'];
+}
+```
+
+When a user requests `GET /exo-api/resources/contact?search=jane`, Exo runs an `OR LIKE` query across these columns, matching any record where `name` or `email` contains "jane".
+
+## Custom search logic
+
+For more control, override the `applySearch` method. This is useful for full-text search, searching across relationships, or other custom matching:
+
+```php
+public function applySearch(Builder $query, string $search): Builder
+{
+    return $query->where(function (Builder $q) use ($search) {
+        $q->where('name', 'like', "%{$search}%")
+          ->orWhere('email', 'like', "%{$search}%")
+          ->orWhereHas('company', function (Builder $q) use ($search) {
+              $q->where('name', 'like', "%{$search}%");
+          });
+    });
+}
+```
+
+When you override `applySearch`, the `searchableColumns` return value is ignored — your custom method takes full control.
+
+## Customizing the base query
+
+The `baseQuery` method defines the starting Eloquent query for all list and show operations. Override it to add eager loading, default scopes, or ordering:
+
+```php
+use Illuminate\Database\Eloquent\Builder;
+
+public function baseQuery(): Builder
+{
+    return parent::baseQuery()
+        ->with(['company', 'tags'])
+        ->orderBy('created_at', 'desc');
+}
+```
+
+<Tip>
+  If your `transform` method accesses relationships, eager-load them in `baseQuery` to avoid N+1 query problems.
+</Tip>
+
+## Pagination
+
+List endpoints return paginated results. The default page size is 15. API consumers can change it with the `?per_page=` query parameter:
+
+```
+GET /exo-api/resources/contact?per_page=50
+```
+
+The response includes standard Laravel pagination metadata:
+
+```json
+{
+  "data": [...],
+  "current_page": 1,
+  "last_page": 3,
+  "per_page": 50,
+  "total": 142,
+  "next_page_url": "http://your-app.test/exo-api/resources/contact?page=2&per_page=50",
+  "prev_page_url": null
+}
+```
