@@ -1,0 +1,32 @@
+/**
+ * Exo brand tokens (see docs.json colors). Custom focus rings and badge tints only;
+ * primary CTA styling comes from Mintlify + docs.json colors.
+ */
+:root {
+  --exo-light: #ff8f5c;
+  --exo-dark: #c73700;
+  --exo-accent: #ff7029;
+}
+
+#navbar a:focus-visible,
+#sidebar-content a:focus-visible,
+#topbar-cta-button:focus-visible,
+.search-bar-entry:focus-visible,
+.search-bar-entry-mobile:focus-visible {
+  outline: 2px solid var(--exo-light);
+  outline-offset: 2px;
+}
+
+[data-badge][data-color='orange'],
+[data-badge][data-color='amber'] {
+  background-color: color-mix(in srgb, var(--exo-dark) 18%, transparent);
+  color: var(--exo-dark);
+  border-color: color-mix(in srgb, var(--exo-dark) 28%, transparent);
+}
+
+/* Logo-style accent: primary nav icon dots / small status markers when themed as brand */
+[data-badge][data-color='mint'] {
+  background-color: color-mix(in srgb, var(--exo-accent) 22%, transparent);
+  color: var(--exo-dark);
+  border-color: color-mix(in srgb, var(--exo-accent) 35%, transparent);
+}

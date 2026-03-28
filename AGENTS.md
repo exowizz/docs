@@ -4,9 +4,10 @@
 
 # Documentation project instructions
 
-## About Exowizz project
+## About this site
 
-- This is a documentation site built on [Mintlify](https://mintlify.com)
+- Exo product documentation, built with [Mintlify](https://mintlify.com)
+- Header logos and favicon are copied from `public/creatives/svg/` (`logo-light.svg` → `docs/logo/light.svg`, `logo-dark.svg` → `docs/logo/dark.svg`, `favicon.svg` → `docs/favicon.svg`)
 - Pages are MDX files with YAML frontmatter
 - Configuration lives in `docs.json`
 - Run `mint dev` to preview locally
